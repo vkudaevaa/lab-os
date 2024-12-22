@@ -9,7 +9,10 @@
 #include <sys/stat.h>
 
 #define BUFFER_SIZE 1024
-#define SHM_SIZE sizeof(char) * 1024 
+#define SHM_NAME "/shared_memory"
+#define SEM_WRITE_NAME "/sem_write" 
+#define SEM_READ_NAME "/sem_read"
+#define SHM_SIZE sizeof(char) * 1024  
 
 bool validate_string(const char *str) {
     size_t len = strlen(str);
@@ -19,7 +22,7 @@ bool validate_string(const char *str) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        perror("File name not provided");
+        perror("Invalid number of arguments\n");
         exit(EXIT_FAILURE);
     }
 
@@ -29,27 +32,32 @@ int main(int argc, char *argv[]) {
     char buffer[BUFFER_SIZE];
     char filename[256];
     
-    strncpy(filename, argv[1], sizeof(filename) - 1);
-    filename[sizeof(filename) - 1] = '\0';
+    int fd = open(argv[1], O_WRONLY | O_TRUNC | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+        if (fd == -1) {
+            perror("Error open input file\n");
+            exit(EXIT_FAILURE);
+        }
 
-    shm_fd = shm_open("/shm_example", O_RDONLY, 0);
+    shm_fd = shm_open(SHM_NAME, O_RDONLY, 0);
     if (shm_fd == -1) {
-        perror("shm_open failed");
+        perror("Error creating shared memory\n");
         exit(EXIT_FAILURE);
     }
 
     shm_ptr = mmap(NULL, SHM_SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (shm_ptr == MAP_FAILED) {
-        perror("mmap failed");
+        perror("Error mapping shared memory\n");
         exit(EXIT_FAILURE);
     }
 
-    sem_write = sem_open("/sem_write", 0);
-    sem_read = sem_open("/sem_read", 0);
+    sem_write = sem_open(SEM_WRITE_NAME, 0);
+    sem_read = sem_open(SEM_READ_NAME, 0);
     if (sem_write == SEM_FAILED || sem_read == SEM_FAILED) {
-        perror("sem_open failed");
+        perror("Error creating semaphore\n");
         exit(EXIT_FAILURE);
     }
+
+    char error_message[] = "Invalid string\n";
 
     while (1) {
         sem_wait(sem_read);  
@@ -60,27 +68,20 @@ int main(int argc, char *argv[]) {
 
         if (validate_string(shm_ptr)) {
           
-            int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-            if (fd == -1) {
-                perror("Failed to open file");
-                exit(EXIT_FAILURE);
-            }
-
             write(fd, shm_ptr, strlen(shm_ptr));
             write(fd, "\n", 1);
-            close(fd);
-            write(STDOUT_FILENO, "OK\n", 3);
+
         } else {
-            write(STDOUT_FILENO, "Invalid string\n", 15);
+            write(STDOUT_FILENO, error_message, sizeof(error_message) - 1);
         }
 
         sem_post(sem_write);
     }
 
+    close(fd);
     sem_close(sem_write);
     sem_close(sem_read);
     munmap(shm_ptr, SHM_SIZE);
-    shm_unlink("/shm_example");
-
+    shm_unlink(SHM_NAME);
     exit(EXIT_SUCCESS);
 }
