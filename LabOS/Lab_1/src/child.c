@@ -21,7 +21,6 @@ int main(int argc, char *argv[]) {
     char buffer[BUFFER_SIZE];
     char error_message[] = "Invalid string\n";
 
-    // Открытие файла для записи строк
     int fd = open(argv[1], O_WRONLY | O_TRUNC | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
     if (fd == -1) {
         perror("Failed to open file");
@@ -31,7 +30,6 @@ int main(int argc, char *argv[]) {
     while ((bytes_read = read(STDIN_FILENO, buffer, sizeof(buffer) - 1)) > 0) {
         buffer[bytes_read] = '\0';
         printf("Child: received string '%s', %zd bytes read\n", buffer, bytes_read);
-        // Проверка строки на валидность
         if (validate_string(buffer)) {
             write(fd, buffer, strlen(buffer));
             write(fd, "\n", 1);
