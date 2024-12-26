@@ -9,22 +9,21 @@
 
 #define MIN_BLOCK_SIZE 16
 
-// Структура для метаданных блока
 typedef struct BlockHeader {
-    size_t size;               // Размер блока данных
-    struct BlockHeader *next;  // Указатель на следующий блок
-    bool is_free;  // Флаг, указывающий, свободен ли блок
+    size_t size;               
+    struct BlockHeader *next;  
+    bool is_free;  
 } BlockHeader;
 
-// Структура аллокатора
+
 typedef struct Allocator {
-    BlockHeader *free_list;  // Указатель на начало списка свободных блоков
-    void *memory_start;      // Начало выделенной памяти
-    size_t total_size;  // Общий размер выделенной памяти
-    void *base_addr;  // Указатель на начало выделенной памяти mmap
+    BlockHeader *free_list;  
+    void *memory_start;      
+    size_t total_size;  
+    void *base_addr; 
 } Allocator;
 
-// Функция создания аллокатора
+
 Allocator *allocator_create(void *memory, size_t size) {
     if (!memory || size < sizeof(Allocator)) {
         return NULL;
@@ -36,7 +35,6 @@ Allocator *allocator_create(void *memory, size_t size) {
     allocator->total_size = size - sizeof(Allocator);
     allocator->free_list = (BlockHeader *)allocator->memory_start;
 
-    // Инициализируем метаданные первого блока
     allocator->free_list->size = allocator->total_size - sizeof(BlockHeader);
     allocator->free_list->next = NULL;
     allocator->free_list->is_free = true;
@@ -44,7 +42,6 @@ Allocator *allocator_create(void *memory, size_t size) {
     return allocator;
 }
 
-// Функция выделения памяти
 void *allocator_alloc(Allocator *allocator, size_t size) {
     if (!allocator || size == 0) {
         return NULL;
@@ -95,7 +92,6 @@ void *allocator_alloc(Allocator *allocator, size_t size) {
     return NULL;
 }
 
-// Функция освобождения памяти
 void allocator_free(Allocator *allocator, void *ptr) {
     if (!allocator || !ptr) {
         return;
@@ -105,24 +101,24 @@ void allocator_free(Allocator *allocator, void *ptr) {
     if (!header) return;
     header->is_free = true;
 
-    // Вставляем освобожденный блок в начало free_list
+
     header->next = allocator->free_list;
     allocator->free_list = header;
 
     BlockHeader *current = allocator->free_list;
     BlockHeader *prev = NULL;
 
-    // Проходим по free_list и пытаемся слить свободные блоки
+
     while (current && current->next) {
         BlockHeader *next = current->next;
-        // Проверяем, можем ли слить current с next
+        
         if (((char *)current + sizeof(BlockHeader) + current->size) ==
             (char *)next) {
             current->size += next->size + sizeof(BlockHeader);
             current->next = next->next;
-            continue;  // Убедимся что новый current тоже проверится
+            continue;  
         }
-        // Проверяем, можем ли слить prev с current
+        
         if (prev && ((char *)prev + sizeof(BlockHeader) + prev->size) ==
                         (char *)current) {
             prev->size += current->size + sizeof(BlockHeader);
@@ -136,7 +132,7 @@ void allocator_free(Allocator *allocator, void *ptr) {
     }
 }
 
-// Функция уничтожения аллокатора
+
 void allocator_destroy(Allocator *allocator) {
     if (allocator) {
         munmap(allocator->base_addr, allocator->total_size + sizeof(Allocator));

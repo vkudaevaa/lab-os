@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    void *blocks[10];
+    void *blocks[12];
     size_t block_sizes[12] = {12,  13, 13, 24, 40, 56, 100, 120, 400, 120, 120, 120};
 
     int alloc_failed = 0;

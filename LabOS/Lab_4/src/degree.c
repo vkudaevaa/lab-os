@@ -7,7 +7,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define MIN_BLOCK_SIZE 16  // Минимальный размер блока
+#define MIN_BLOCK_SIZE 16
 
 int log2s(int n) {
     if (n == 0) {
@@ -25,12 +25,12 @@ typedef struct BlockHeader {
     struct BlockHeader *next;
 } BlockHeader;
 
-// Структура аллокатора
+
 typedef struct Allocator {
-    BlockHeader **free_lists;
-    size_t num_lists;
-    void *base_addr;
-    size_t total_size;
+    BlockHeader **free_lists; 
+    size_t num_lists; 
+    void *base_addr; 
+    size_t total_size; 
 } Allocator;
 
 Allocator *allocator_create(void *memory, size_t size) {
@@ -93,7 +93,7 @@ Allocator *allocator_create(void *memory, size_t size) {
     return allocator;
 }
 
-// Функция выделения памяти
+
 void *allocator_alloc(Allocator *allocator, size_t size) {
     if (!allocator || size == 0) {
         return NULL;
@@ -122,7 +122,7 @@ void *allocator_alloc(Allocator *allocator, size_t size) {
     return (void *)((char *)block + sizeof(BlockHeader));
 }
 
-// Функция освобождения памяти
+
 void allocator_free(Allocator *allocator, void *ptr) {
     if (!allocator || !ptr) {
         return;
@@ -150,7 +150,7 @@ void allocator_free(Allocator *allocator, void *ptr) {
     allocator->free_lists[index] = block;
 }
 
-// Функция уничтожения аллокатора
+
 void allocator_destroy(Allocator *allocator) {
     if (allocator) {
         munmap(allocator->base_addr, allocator->total_size);
