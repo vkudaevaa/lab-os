@@ -19,7 +19,6 @@ typedef struct {
 } Task;
 
 pthread_mutex_t thread_count_mutex;
-pthread_cond_t thread_available;
 int active_threads = 0;
 
 void write_message(const char* message) {
@@ -134,7 +133,6 @@ void *process_task(void *arg) {
 
     pthread_mutex_lock(&thread_count_mutex);
     active_threads--; 
-    pthread_cond_signal(&thread_available); 
     pthread_mutex_unlock(&thread_count_mutex);
 
     pthread_exit(NULL);
@@ -154,10 +152,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    clock_t start = clock();
-
     pthread_mutex_init(&thread_count_mutex, NULL);
-    pthread_cond_init(&thread_available, NULL);
+
 
     double** erosion_matrix = allocateMatrix(ROWS, COLS);
     double** erosion_result = allocateMatrix(ROWS, COLS);
@@ -178,9 +174,6 @@ int main(int argc, char *argv[]) {
 
         for (int i = 0; i < max_threads; i++) {
             pthread_mutex_lock(&thread_count_mutex);
-            while (active_threads >= max_threads) {
-                pthread_cond_wait(&thread_available, &thread_count_mutex); 
-            }
             active_threads++;
             pthread_mutex_unlock(&thread_count_mutex);
 
@@ -214,18 +207,12 @@ int main(int argc, char *argv[]) {
     writeMatrix(dilation_result, ROWS, COLS);
 
     pthread_mutex_destroy(&thread_count_mutex);
-    pthread_cond_destroy(&thread_available);
+    
 
     freeMatrix(erosion_matrix, ROWS);
     freeMatrix(erosion_result, ROWS);
     freeMatrix(dilation_matrix, ROWS);
     freeMatrix(dilation_result, ROWS);
-
-    clock_t end = clock();
-    char time[64];
-    float seconds = (float)(end - start) / CLOCKS_PER_SEC;
-    snprintf(time, sizeof(time), "%lf\n", seconds);
-    write_message(time);
 
     return 0;
 }

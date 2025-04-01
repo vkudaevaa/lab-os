@@ -1,8 +1,14 @@
-# Ignoring binary files
+# Игнорируем бинарные файлы
 *.exe
 *.out
 *.o
 
-# Ignoring temporary files
+# Игнорируем временные файлы
 *.log
 *.tmp
+
+# Игнорируем папку .vscode
+.vscode/
+
+# Игнорируем все текстовые файлы
+*.txt

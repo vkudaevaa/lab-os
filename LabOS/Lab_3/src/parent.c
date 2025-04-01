@@ -87,7 +87,6 @@ int main() {
             sem_wait(sem_write); 
         }
         
-        sem_post(sem_read);  
         sem_close(sem_write);
         sem_close(sem_read);
         sem_unlink(SEM_WRITE_NAME);
